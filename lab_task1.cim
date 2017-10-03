@@ -1,0 +1,74 @@
+begin
+  external class demos="demos.atr";
+  demos
+  begin
+
+
+      !!!!!!!!!!!!!!!!!!!
+      !!!! VARIABLES !!!!
+      !!!!!!!!!!!!!!!!!!!
+
+    ! Task specific variables
+    integer Tw, Tn, Tc, Ts;
+    long real lambda;
+
+
+    // Demos variables
+    ref (RDist) generatorIntensity_;
+    ref (Res) mutex;
+
+    /**********************/
+    /*** ENTITY CLASSES ***/
+    /**********************/
+
+    // Entity: Packet
+    Entity class Packet;
+    begin
+      long real timestamp;
+      integer i;
+      timestamp := time;
+      hold(Tw);
+      hold(Tn);
+      mutex.acquire(1);
+      hold(Tc);
+      mutex.release(1);
+    end;
+
+    // Entity: Generator
+    Entity class Generator;
+    begin
+      integer i;
+      for i := 1 step 1 until 100000 do
+      begin
+        new Packet(edit("packet",i)).schedule(now);
+        hold(generatorIntensity_.sample);
+      end;
+    end;
+
+    // Entity: Server
+    Entity class Server(inputBuffer_);
+    ref(WaitQ) inputBuffer_;
+    begin
+      ref(Packet) packet_;
+    end;
+
+    /***************************/
+    /*** SET VARIABLE VALUES ***/
+    /***************************/
+
+    //
+    Tw := 0.110;    // 110ms  -> s
+    Tn := 0.020;    // 20ms   -> s
+    Tc := 0.0001;   // 0.1ms  -> s
+    Ts := 0.002;    // 2ms    -> s
+    // lambda := [pck/s]
+
+    generatorIntensity_ :- new NegExp("Packet", lambda);
+
+    mutex :- new Res("mutex", 1);
+
+    new Generator("Gen").schedule(0);
+
+
+  end;
+end;
