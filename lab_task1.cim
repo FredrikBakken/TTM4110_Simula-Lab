@@ -18,7 +18,8 @@ begin
     !! Demos variables;
     ref (Res) controller;
     ref (Res) server;
-    ref (RDist) generatorIntensity_;
+    ref (IDist) generatorIntensity_;          ! ref (RDist) generatorIntensity_;
+    ref (IDist) random_;
     ref (BDist) controller_;
     ref (Tally) delay_;
 
@@ -30,25 +31,26 @@ begin
     !! Entity: Packet;
     Entity class Packet;
     begin
-      long real timestamp;
-      !integer i;
-      timestamp := time;
-      hold(Tw);
-      hold(Tn);
-      controller.acquire(1);
-      hold(Tc);
-      controller.release(1);
-      server.acquire(1);
-      hold(Ts);
-      server.release(1);
-      delay_.update(time-timestamp);
+      if random_.sample <= 95 then begin
+        long real timestamp;
+        timestamp := time;
+        hold(Tw);
+        hold(Tn);
+        controller.acquire(1);
+        hold(Tc);
+        controller.release(1);
+        server.acquire(1);
+        hold(Ts);
+        server.release(1);
+        delay_.update(time-timestamp);
+      end;
     end;
 
     !! Entity: Generator;
     Entity class Generator;
     begin
       integer i;
-      for i:= 1 step 1 until 100000 do
+      for i:= 1 step 1 until 1000 do
         begin
           new Packet(edit("packet",i)).schedule(now);
           hold(generatorIntensity_.sample);
@@ -62,7 +64,8 @@ begin
     lambda := 1;
 
     ! y = 1 emacs;
-    generatorIntensity_ :- new NegExp("packet", lambda);
+    generatorIntensity_ :- new Poisson("packet", lambda);   ! NegExp("packet", lambda);
+    random_ :- new RandInt("rand", 0, 100);
 
     delay_ :- new Tally("delay");
     controller :- new Res("controller", 1);
