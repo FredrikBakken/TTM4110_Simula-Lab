@@ -2,68 +2,82 @@ begin
   external class demos="demos.atr";
   demos
   begin
-
-    !!!!!!!!!!!!!!!!!!!
-    !!!! VARIABLES !!!!
-    !!!!!!!!!!!!!!!!!!!
-
-    !! Task specific variables
-    long real lambda;
-	integer Tw = 0.110;
-	integer Tn = 0.020;
-	integer Tc = 0.0001;
-	integer Ts = 0.002;
-	 !! lambda := [pck/s]
-
-
+    !! Task variables
+    long real MAX_DELAY = 3.0;
+    long real TRANSMISSION_DELAY_BETWEEN_ROUTERS = 0.2;
 
     !! Demos variables
-    ref (RDist) generatorIntensity_;
-    ref (Res) mutex;
+    ref(WaitQ) in1_, in2_, in3_;
+    ref(Count) recvPackets_, lostPackets_;
+    ref(Tally) delay_;
+    ref(RDist) processingTime_, interArrivalTime_;
+    ref(BDist) loadBalancing_;
 
-    !!!!!!!!!!!!!!!!!!!!!!!!
-    !!!! ENTITY CLASSES !!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!
-
-    !! Entity: Packet
-     Entity class Packet;
-     begin
-       long real timestamp;
-       integer i;
-       timestamp := time;
-       hold(Tw);
-       hold(Tn);
-       mutex.acquire(1);
-       hold(Tc);
-       mutex.release(1);
+    !! Entity Packet
+    Entity class Packet;
+    begin
+      long real timestamp;
+      boolean ttl;
+      integer i;
+      timestamp := time;
+      ttl := true;
+      if loadBalancing_.sample then in1_.wait
+      else in2_.wait;
+      if ttl then begin
+        hold(TRANSMISSION_DELAY_BETWEEN_ROUTERS);
+        in3_.wait;
+        if ttl then begin
+          delay_.update(time-timestamp);
+          recvPackets_.update(1);
+        end;
+      end;
     end;
 
-     !Entity: Generator
-     Entity class Generator;
-     begin
-       integer i;
-       for i := 1 step 1 until 100000 do
-       begin
-         new Packet(edit("packet",i)).schedule(now);
-         hold(generatorIntensity_.sample);
-       end;
-     end;
+    !! Entity Generator
+    Entity class Generator;
+    begin
+      integer i;
+      i := 1;
+      loop:
+        new Packet(edit("packet",i)).schedule(now);
+        hold(interArrivalTime_.sample);
+        i := i + 1;
+        repeat;
+    end;
 
-    !! Entity: Server
-    ! Entity class Server(inputBuffer_);
-    !ref(WaitQ) inputBuffer_;
-    ! begin
-      ! ref(Packet) packet_;
-    ! end;
+    !! Entity Router;
+    Entity class Router(inputBuffer_);
+    ref(WaitQ) inputBuffer_;
+    begin
+      ref(Packet) packet_;
+      loop:
+        packet_ :- inputBuffer_.coopt;
+        if time > (packet_.timestamp + MAX_DELAY) then begin
+          !the packet is old, count it as lost;
+          packet_.ttl := false;
+          lostPackets_.update(1);
+        end
+        else begin
+          !process the packet and put it in the output buffer;
+          hold(processingTime_.sample);
+        end;
+        packet_.schedule(now);
+      repeat;
+    end;
 
-
-
-    ! generatorIntensity_ :- new NegExp("Packet", lambda);
-
-    ! mutex :- new Res("mutex", 1);
-
+    interArrivalTime_ :- new NegExp("interarrival", 2.0);
+    processingTime_ :- new Erlang("processing", 1.0/3.0, 3.0);
+    lostPackets_ :- new Count("lost packets");
+    delay_ :- new Tally("delay");
+    loadBalancing_ :- new Draw("load bal.", 0.5);
+    in1_ :- new WaitQ("in1");
+    in2_ :- new WaitQ("in2");
+    in3_ :- new WaitQ("in3");
+    recvPackets_ :- new Count("recv packets");
     new Generator("Gen").schedule(0);
-
-
+    new Router("R1",in1_).schedule(0);
+    new Router("R2",in2_).schedule(0);
+    new Router("R3",in3_).schedule(0);
+    hold(300.0);
   end;
 end;

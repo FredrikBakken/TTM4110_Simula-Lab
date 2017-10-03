@@ -8,10 +8,11 @@ begin
     !!!!!!!!!!!!!!!!!!!
 
     !! Task specific variables;
-	  integer Tw = 0.110;
-	  integer Tn = 0.020;
-	  integer Tc = 0.0001;
-	  integer Ts = 0.002;
+	  integer Tw = 110;
+	  integer Tn = 20;
+	  integer Tc = 0.1;
+	  integer Ts = 2;
+    long real lambda;
 
 
     !! Demos variables;
@@ -20,6 +21,7 @@ begin
     ref (RDist) generatorIntensity_;
     ref (BDist) controller_;
     ref (Tally) delay_;
+
 
     !!!!!!!!!!!!!!!!!!!!!!!!
     !!!! ENTITY CLASSES !!!!
@@ -38,7 +40,7 @@ begin
       controller.release(1);
       server.acquire(1);
       hold(Ts);
-      server.acquire(1);
+      server.release(1);
       delay_.update(time-timestamp);
     end;
 
@@ -46,24 +48,27 @@ begin
     Entity class Generator;
     begin
       integer i;
-      for i := 1 step 1 until 1000 do
-      begin
-        new Packet(edit("packet",i)).schedule(now);
-        !hold(generatorIntensity_.sample);
-      end;
+      for i:= 1 step 1 until 100000 do
+        begin
+          new Packet(edit("packet",i)).schedule(now);
+          hold(generatorIntensity_.sample);
+        end;
     end;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!! Assign variables values !!!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    lambda := 1;
 
-    !generatorIntensity_ :- new NegExp("Packet", lambda);
+    ! y = 1 emacs;
+    generatorIntensity_ :- new NegExp("packet", lambda);
 
     delay_ :- new Tally("delay");
     controller :- new Res("controller", 1);
     server :- new Res("server", 2);
 
     new Generator("Gen").schedule(0);
+    hold(300000000);
   end;
 end;
