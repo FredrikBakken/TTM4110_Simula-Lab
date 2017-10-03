@@ -7,67 +7,63 @@ begin
     !!!! VARIABLES !!!!
     !!!!!!!!!!!!!!!!!!!
 
-    !! Task specific variables
-    integer Tw, Tn, Tc, Ts;
-    long real lambda;
+    !! Task specific variables;
+	  integer Tw = 0.110;
+	  integer Tn = 0.020;
+	  integer Tc = 0.0001;
+	  integer Ts = 0.002;
 
 
-    !! Demos variables
-    !ref (RDist) generatorIntensity_;
-    !ref (Res) mutex;
+    !! Demos variables;
+    ref (Res) controller;
+    ref (Res) server;
+    ref (RDist) generatorIntensity_;
+    ref (BDist) controller_;
+    ref (Tally) delay_;
 
     !!!!!!!!!!!!!!!!!!!!!!!!
     !!!! ENTITY CLASSES !!!!
     !!!!!!!!!!!!!!!!!!!!!!!!
 
-    !! Entity: Packet
-    ! Entity class Packet;
-    ! begin
-      ! long real timestamp;
-      ! integer i;
-       !timestamp := time;
-       !hold(Tw);
-       !hold(Tn);
-      !mutex.acquire(1);
-       !hold(Tc);
-      !mutex.release(1);
-    !end;
+    !! Entity: Packet;
+    Entity class Packet;
+    begin
+      long real timestamp;
+      !integer i;
+      timestamp := time;
+      hold(Tw);
+      hold(Tn);
+      controller.acquire(1);
+      hold(Tc);
+      controller.release(1);
+      server.acquire(1);
+      hold(Ts);
+      server.acquire(1);
+      delay_.update(time-timestamp);
+    end;
 
-    !! Entity: Generator
-    ! Entity class Generator;
-    ! begin
-      ! integer i;
-      ! for i := 1 step 1 until 100000 do
-      ! begin
-        ! new Packet(edit("packet",i)).schedule(now);
-        ! hold(generatorIntensity_.sample);
-      ! end;
-    ! end;
-
-    !! Entity: Server
-    ! Entity class Server(inputBuffer_);
-    !ref(WaitQ) inputBuffer_;
-    ! begin
-      ! ref(Packet) packet_;
-    ! end;
-
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!! SET VARIABLE VALUES !!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-    !!
-    Tw := 0.110;    !! 110ms  -> s
-    Tn := 0.020;    !! 20ms   -> s
-    Tc := 0.0001;   !! 0.1ms  -> s
-    Ts := 0.002;    !! 2ms    -> s
-    !! lambda := [pck/s]
-
-    ! generatorIntensity_ :- new NegExp("Packet", lambda);
-
-    ! mutex :- new Res("mutex", 1);
-
-    ! new Generator("Gen").schedule(0);
+    !! Entity: Generator;
+    Entity class Generator;
+    begin
+      integer i;
+      for i := 1 step 1 until 1000 do
+      begin
+        new Packet(edit("packet",i)).schedule(now);
+        !hold(generatorIntensity_.sample);
+      end;
+    end;
 
 
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!! Assign variables values !!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    !generatorIntensity_ :- new NegExp("Packet", lambda);
+
+    delay_ :- new Tally("delay");
+    controller :- new Res("controller", 1);
+    server :- new Res("server", 2);
+
+    new Generator("Gen").schedule(0);
   end;
 end;
