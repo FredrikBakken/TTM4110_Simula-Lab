@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 
 def run():
-    filename = "data.csv"   # Replace with data.csv or data_2.csv
+    filename = "CDF_data1.csv"   # Replace with CDF_data1.csv or CDF_data2.csv
     data_req = pd.read_table(filename, sep=",")
     sorted_values = data_req.apply(lambda x: x.sort_values())
 
