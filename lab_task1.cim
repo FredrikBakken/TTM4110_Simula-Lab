@@ -1,3 +1,10 @@
+! Recommended compiler: emacs ;
+
+! Questions list ;
+! Poisson vs. NegExp -> NegExp
+! Probability calc -> Draw("name", probability) -> 0.95 : True | 0.05 : False
+! ;
+
 begin
   external class demos="demos.atr";
   demos
@@ -18,9 +25,9 @@ begin
     !! Demos variables;
     ref (Res) controller;
     ref (Res) server;
-    ref (IDist) generatorIntensity_;          ! ref (RDist) generatorIntensity_;
+    ref (RDist) generatorIntensity_;          ! ref (IDist) generatorIntensity_;
     ref (IDist) random_;
-    ref (BDist) controller_;
+    ref (BDist) controller_, packetLoss_;
     ref (Tally) delay_;
 
 
@@ -31,7 +38,7 @@ begin
     !! Entity: Packet;
     Entity class Packet;
     begin
-      if random_.sample <= 95 then begin
+      if packetLoss_.sample then begin
         long real timestamp;
         timestamp := time;
         hold(Tw);
@@ -50,7 +57,7 @@ begin
     Entity class Generator;
     begin
       integer i;
-      for i:= 1 step 1 until 1000 do
+      for i:= 1 step 1 until 100000 do
         begin
           new Packet(edit("packet",i)).schedule(now);
           hold(generatorIntensity_.sample);
@@ -61,15 +68,17 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     !!!! Assign variables values !!!!
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    lambda := 1;
 
-    ! y = 1 emacs;
-    generatorIntensity_ :- new Poisson("packet", lambda);   ! NegExp("packet", lambda);
-    random_ :- new RandInt("rand", 0, 100);
+    lambda := 1;
+    generatorIntensity_ :- new NegExp("packet", lambda);
+
+
+    ! RANDOM NUMBER GENERATOR BETWEEN 0 AND 100;
+    packetLoss_ :- new Draw("Loss", 0.95);
 
     delay_ :- new Tally("delay");
     controller :- new Res("controller", 1);
-    server :- new Res("server", 2);
+    server :- new Res("server", 4);
 
     new Generator("Gen").schedule(0);
     hold(300000000);
