@@ -89,7 +89,7 @@ begin
     !! Create New Generator Entity !! ;
     new Generator("Gen").schedule(0);
 
-    !! Force Hold Simulation !! ;
+    !! Force Hold Simulation Active !! ;
     hold(300000000);
   end;
 end;
