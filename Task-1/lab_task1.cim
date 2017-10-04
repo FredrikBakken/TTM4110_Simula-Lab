@@ -4,7 +4,7 @@
 ! Run compiled program to file: ./lab_task1 > delay_output.csv  || ./lab_task1 > output.txt   ;
 
 begin
-  external class demos="demos.atr";
+  external class demos="../demos.atr";
   demos
   begin
 
@@ -13,13 +13,15 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Task Specific Variables !! ;
-	  integer Tw = 110;
-	  integer Tn = 20;
-	  integer Tc = 0.1;
-	  integer Ts = 2;
-	  integer numberofpackets = 100000;
-	  integer numberofservers = 2;
-    long real lambda = ((100000 / 50) / 1000);         ! Task 1.4: ((1000 / 50) / 1000) = 0.02, ((10000 / 50) / 1000) = 0.2, ((100000 / 50) / 1000) = 2;
+    integer Tw = 110;
+    integer Tn = 20;
+    integer Tc = 0.1;
+    integer Ts = 2;
+    integer numberofpackets = 100000;
+    integer numberofservers = 2;
+
+    ! Task 1.4: ((1000 / 50) / 1000) = 0.02, ((10000 / 50) / 1000) = 0.2, ((100000 / 50) / 1000) = 2;
+    long real lambda = ((1000 / 1) / 1000);
 
     !! DEMOS Variables !! ;
     ref (Res) controller;
@@ -74,20 +76,20 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Packet Generator Intensity !! ;
-    generatorIntensity_ :- new NegExp("packet", lambda);
+    generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Packet Loss Probability | 5% Loss !! ;
     packetLoss_ :- new Draw("Loss", 0.95);
 
     !! Delay Time Counter !! ;
-    delay_ :- new Tally("delay");
+    delay_ :- new Tally("Delay");
 
-    !! Controller & Server Mutex !! ;
-    controller :- new Res("controller", 1);
-    server :- new Res("server", numberofservers);
+    !! Controller and Server Mutex !! ;
+    controller :- new Res("Controller", 1);
+    server :- new Res("Server", numberofservers);
 
     !! Create New Generator Entity !! ;
-    new Generator("Gen").schedule(0);
+    new Generator("Generator").schedule(0);
 
     !! Force Hold Simulation Active !! ;
     hold(300000000);
