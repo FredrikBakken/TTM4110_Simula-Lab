@@ -1,5 +1,7 @@
-! Recommended compiler:         emacs ;
-! Compile with extended memory: cim -m10 my_code.sim && ./my_code ;
+! Recommended compiler:         emacs                                                         ;
+! Compile with extended memory: cim -m500 lab_task1.cim                                       ;
+! Run compiled program:         ./lab_task1                                                   ;
+! Run compiled program to file: ./lab_task1 > delay_output.csv  || ./lab_task1 > output.txt   ;
 
 begin
   external class demos="demos.atr";
@@ -17,7 +19,7 @@ begin
 	  integer Ts = 2;
 	  integer numberofpackets = 100000;
 	  integer numberofservers = 2;
-    long real lambda = 1000/1000;         ! Divide on 1000, because of ms;
+    long real lambda = ((100000 / 50) / 1000);         ! Task 1.4: ((1000 / 50) / 1000) = 0.02, ((10000 / 50) / 1000) = 0.2, ((100000 / 50) / 1000) = 2;
 
     !! DEMOS Variables !! ;
     ref (Res) controller;
@@ -46,12 +48,12 @@ begin
         hold(Ts);
         server.release(1);
         delay_.update(time-timestamp);
-        outint (time-timestamp,0);
-        outimage;
+        !outint (time-timestamp,0);
+        !outimage;
       end
       else begin
-        outtext("0,loss");
-        outimage;
+        !outtext("0,loss");
+        !outimage;
       end;
     end;
 

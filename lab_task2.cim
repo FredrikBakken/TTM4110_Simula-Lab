@@ -1,5 +1,7 @@
 ! Recommended compiler:         emacs ;
-! Compile with extended memory: cim -m10 my_code.sim && ./my_code ;
+! Compile with extended memory: cim -m500 lab_task2.cim
+! Run compiled program:         ./lab_task2
+! Run compiled program to file: ./lab_task2 > delay_output.csv  || ./lab_task2 > output.txt
 
 begin
   external class demos="demos.atr";
@@ -11,29 +13,54 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Task Specific Variables !! ;
+    integer Tc  = 0.1;
+    integer Trc = 2;
+    integer lambdaFC = 0.01;
+
+    integer Ts  = 2;
+    integer Trs = 1;
+    integer lambdaFS = 0.01;
+
+    integer numberofpackets = 100000;
+    long real lambda = ((1000 / 1) / 1000);
 
 
     !! DEMOS Variables !! ;
-
+    ref (RDist) generatorIntensity_;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! ENTITY CLASSES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Entity: X !! ;
-
+    !! Entity: ELHUB !! ;
+    Entity class ELHUB;
+    begin
+      integer passiveCounter = 0;
+    end;
 
     !! Entity: Y !! ;
 
 
-    !! Entity: Z !! ;
+    !! Entity: Generator !! ;
+    Entity class Generator;
+    begin
+      integer i;
+      for i:= 1 step 1 until numberofpackets do
+        begin
+          new ELHUB(edit("packet",i)).schedule(now);
+          hold(generatorIntensity_.sample);
+        end;
+    end;
 
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
+
+    !! Packet Generator Intensity !! ;
+    generatorIntensity_ :- new NegExp("packet", lambda);
 
 
     hold(300000000);
