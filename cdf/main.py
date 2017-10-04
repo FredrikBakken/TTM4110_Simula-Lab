@@ -5,13 +5,17 @@
 # py -3.5 -m pip install numpy
 # py -3.5 -m pip install matplotlib
 
+# Run command:
+# py -3.5 main.py
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def run():
-    data_req = pd.read_table("data.csv", sep=",")
+    filename = "data.csv"   # Replace with data.csv or data_2.csv
+    data_req = pd.read_table(filename, sep=",")
     sorted_values = data_req.apply(lambda x: x.sort_values())
 
     for col in sorted_values.columns:
