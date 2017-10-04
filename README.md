@@ -1,4 +1,4 @@
-# TTM4110: Simula Lab 2017
+# TTM4110: Simulation Lab 2017
 
 ### Group Members
  - [Fredrik Bakken](https://fredrikbakken.no)
