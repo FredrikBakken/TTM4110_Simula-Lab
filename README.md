@@ -1,6 +1,6 @@
 # TTM4110: Simula Lab 2017
 
-### Made By:
+### Group Members
  - [Fredrik Bakken](https://fredrikbakken.no)
  - [Fredrik Andreassen](https://github.com/fredrian)
 
