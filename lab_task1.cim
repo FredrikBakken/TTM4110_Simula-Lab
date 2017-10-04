@@ -1,41 +1,37 @@
-! Recommended compiler: emacs ;
-
-! Questions list ;
-! Poisson vs. NegExp -> NegExp
-! Probability calc -> Draw("name", probability) -> 0.95 : True | 0.05 : False
-! ;
+! Recommended compiler:         emacs ;
+! Compile with extended memory: cim -m10 my_code.sim && ./my_code ;
 
 begin
   external class demos="demos.atr";
   demos
   begin
 
-    !!!!!!!!!!!!!!!!!!!
-    !!!! VARIABLES !!!!
-    !!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! DEFINE VARIABLES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Task specific variables;
+    !! Task Specific Variables !! ;
 	  integer Tw = 110;
 	  integer Tn = 20;
 	  integer Tc = 0.1;
 	  integer Ts = 2;
-    long real lambda;
+	  integer numberofpackets = 100000;
+	  integer numberofservers = 2;
+    long real lambda = 1000/1000;         ! Divide on 1000, because of ms;
 
-
-    !! Demos variables;
+    !! DEMOS Variables !! ;
     ref (Res) controller;
     ref (Res) server;
-    ref (RDist) generatorIntensity_;          ! ref (IDist) generatorIntensity_;
-    ref (IDist) random_;
+    ref (RDist) generatorIntensity_;
     ref (BDist) controller_, packetLoss_;
     ref (Tally) delay_;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!
-    !!!! ENTITY CLASSES !!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! ENTITY CLASSES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Entity: Packet;
+    !! Entity: Packet !! ;
     Entity class Packet;
     begin
       if packetLoss_.sample then begin
@@ -50,14 +46,20 @@ begin
         hold(Ts);
         server.release(1);
         delay_.update(time-timestamp);
+        outint (time-timestamp,0);
+        outimage;
+      end
+      else begin
+        outtext("0,loss");
+        outimage;
       end;
     end;
 
-    !! Entity: Generator;
+    !! Entity: Generator !! ;
     Entity class Generator;
     begin
       integer i;
-      for i:= 1 step 1 until 100000 do
+      for i:= 1 step 1 until numberofpackets do
         begin
           new Packet(edit("packet",i)).schedule(now);
           hold(generatorIntensity_.sample);
@@ -65,22 +67,27 @@ begin
     end;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    !!!! Assign variables values !!!!
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    !!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! VARIABLE VALUES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    lambda := 1;
+    !! Packet Generator Intensity !! ;
     generatorIntensity_ :- new NegExp("packet", lambda);
 
-
-    ! RANDOM NUMBER GENERATOR BETWEEN 0 AND 100;
+    !! Packet Loss Probability | 5% Loss !! ;
     packetLoss_ :- new Draw("Loss", 0.95);
 
+    !! Delay Time Counter !! ;
     delay_ :- new Tally("delay");
-    controller :- new Res("controller", 1);
-    server :- new Res("server", 4);
 
+    !! Controller & Server Mutex !! ;
+    controller :- new Res("controller", 1);
+    server :- new Res("server", numberofservers);
+
+    !! Create New Generator Entity !! ;
     new Generator("Gen").schedule(0);
+
+    !! Force Hold Simulation !! ;
     hold(300000000);
   end;
 end;

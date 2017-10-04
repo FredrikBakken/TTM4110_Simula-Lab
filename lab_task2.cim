@@ -1,0 +1,41 @@
+! Recommended compiler:         emacs ;
+! Compile with extended memory: cim -m10 my_code.sim && ./my_code ;
+
+begin
+  external class demos="demos.atr";
+  demos
+  begin
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! DEFINE VARIABLES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!! ;
+
+    !! Task Specific Variables !! ;
+
+
+    !! DEMOS Variables !! ;
+
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! ENTITY CLASSES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!! ;
+
+    !! Entity: X !! ;
+
+
+    !! Entity: Y !! ;
+
+
+    !! Entity: Z !! ;
+
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!! VARIABLE VALUES !!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!! ;
+
+
+    hold(300000000);
+  end;
+end;
