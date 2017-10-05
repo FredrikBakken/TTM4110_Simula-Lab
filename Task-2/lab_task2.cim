@@ -15,17 +15,19 @@ begin
     !! Task Specific Variables !! ;
     integer Tc  = 0.1;
     integer Trc = 2;
-    integer lambdaFC = 0.01;
+    integer lambdaFC = (1 / 1);
 
     integer Ts  = 2;
     integer Trs = 1;
-    integer lambdaFS = 0.01;
+    integer lambdaFS = (1 / 1);
 
     integer numberofruns = 10000;
+    long real lambda = ((1000 / 1) / 1000);
 
     integer numberofservers;
 
     !! DEMOS Variables !! ;
+    ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
     ref (Bin) bin_;
@@ -72,6 +74,7 @@ begin
       integer j;
       integer k;
       integer size2;
+      integer size3;
       integer test;
 
       for i:= 1 step 1 until numberofruns do
@@ -91,6 +94,12 @@ begin
 
           hold(Trc);
 
+          size3 := bin_.avail;
+
+          ! if size3 > 0 then begin
+            ! outtext("ISSUES");
+            ! outimage;
+          ! end;
           for k:= 1 step 1 until numberofservers do
             begin
               bin_.give(1);
@@ -107,14 +116,18 @@ begin
 
       for i:= 1 step 1 until numberofruns do
         begin
-          hold(0.00001);
+          hold(1.1);
+          outint(generatorIntensity_.sample, 0);
+          outimage;
 
           bin_.take(1);
 
           size := bin_.avail;
 
-          outint(size, 0);
-          outimage;
+          ! outint(size, 0);
+          ! outtext(" | ");
+          ! outint(numberofservers, 0);
+          ! outimage;
 
           if size <= 0 then begin
             numberOfFails_.update(1);
@@ -128,6 +141,9 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
+
+    !! Packet Generator Intensity !! ;
+    generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Controller/Server Failure Intensity !! ;
     controllerFailureIntensity_ :- new NegExp("CFail", lambdaFC);
