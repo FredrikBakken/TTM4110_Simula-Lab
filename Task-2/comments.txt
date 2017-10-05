@@ -1,0 +1,5 @@
+1. NegExp -> Repair
+2. (1 / 2) ms
+3. Hold lavere -> Evt. prøv uten
+4. waitQ -> Sjekk om systemet er nede
+5. Loop + Repeat
