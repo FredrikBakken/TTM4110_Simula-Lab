@@ -41,11 +41,12 @@ begin
     !! Entity: ServerFailure !! ;
     Entity class ServerFailure;
     begin
+      integer size1;
       hold(serverFailureIntensity_.sample);
-      integer size1 = 0;
+
       size1 := bin_.avail;
 
-      if size1 != 0 then begin
+      if size1 ne 0 then begin
         bin_.give(1);
       end;
 
@@ -59,15 +60,16 @@ begin
     !! Entity: ControllerFailure !! ;
     Entity class ControllerFailure;
     begin
-      hold(controllerFailureIntensity_.sample);
+      integer i;
       integer size2;
+      hold(controllerFailureIntensity_.sample);
+
       size2 := bin_.avail;
-      for size2 != 0 then begin
+      if size2 ne 0 then begin
         bin_.give(1);
       end;
       hold(Trc);
 
-      integer i;
       for i:= 1 step 1 until numberofservers do
         begin
           bin_.take(1);
@@ -78,11 +80,12 @@ begin
     !! Entity: ELHUB !! ;
     Entity class ELHUB;
     begin
-      bin_.give(1);
       integer size = 3;
+      bin_.give(1);
+
       !size := bin_.avail;
 
-      if size != 0 then begin
+      if size ne 0 then begin
         numberOfFails = numberOfFails + 1;
       end;
       bin_.take(1);
