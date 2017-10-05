@@ -15,13 +15,13 @@ begin
     !! Task Specific Variables !! ;
     integer Tc  = 0.1;
     integer Trc = 2;
-    integer lambdaFC = (1 / 1);
+    integer lambdaFC = 0.01;
 
     integer Ts  = 2;
     integer Trs = 1;
-    integer lambdaFS = (1 / 1);
+    integer lambdaFS = 0.01;
 
-    integer numberofruns = 10000;
+    integer numberofruns = 100000;
     long real lambda = ((1000 / 1) / 1000);
 
     integer numberofservers;
@@ -105,7 +105,6 @@ begin
 
            if size3 > 0 then
            	begin
-           ! ISSUE, BIN IS NOT EMPTY AND NEEDS TO BE EMPTIED;
             	size8 := bin_.avail;
            	for j:= 1 step 1 until size8 do
 	             begin
@@ -141,17 +140,26 @@ begin
           hold(1);
           bin_.take(1);
 
-          size := bin_.avail;
+          size := bin_.avail +1; !Adding 1, since 1 "ticket" allready taken from BIN;
 
-          !timestamp := time;
-          failing_.waituntil(bin_.avail < 1);
-          !timestamp2 := time;
-
+          timestamp := time;
           outint(size, 0);
+          outtext (" | ");
+          outint (timestamp, 0);
           outimage;
+          failing_.waituntil(bin_.avail > 0 );
+          timestamp2 := time;
+
+
 
           failtime := timestamp2 - timestamp;
           totalFailTime := totalFailTime + failtime;
+
+	  outtext ("totalFailTime: ");
+          outint (totalFailTime, 0);
+          outimage;
+          
+          
 
           bin_.give(1);
         end;
@@ -168,6 +176,7 @@ begin
     !! Controller/Server Failure Intensity !! ;
     controllerFailureIntensity_ :- new NegExp("CFail", lambdaFC);
     serverFailureIntensity_ :- new NegExp("SFail", lambdaFS);
+    
 
     !! Initiate number of servers !!;
     numberofservers := 3;
