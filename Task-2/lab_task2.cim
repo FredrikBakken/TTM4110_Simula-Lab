@@ -106,6 +106,13 @@ begin
     !! Initiate bin !! ;
     bin_.take(numberofservers);
 
+    !! Start Entities !! ;
+    new Generator("Generator").schedule(0);
+    new ControllerFailure("CF1").schedule(0);
+    new ServerFailure("SF1").schedule(0);
+    new ServerFailure("SF2").schedule(0);
+    new ServerFailure("SF3").schedule(0);
+
     !! Force Hold Simulation Active !! ;
     hold(300000000);
   end;
