@@ -26,12 +26,17 @@ begin
 
     integer numberofservers;
 
+    long real totalFailTime;
+
+
     !! DEMOS Variables !! ;
     ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
     ref (Bin) bin_;
     ref (Count) numberOfFails_;
+    ref (CondQ) active_;
+    ref (CondQ) failing_;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
@@ -42,20 +47,20 @@ begin
     Entity class ServerFailure;
     begin
       integer i;
-      integer size1;
+      integer size;
 
       for i:= 1 step 1 until numberofruns do
         begin
           hold(serverFailureIntensity_.sample);
 
-          size1 := bin_.avail;
+          size := bin_.avail;
 
-          !if size1 <= 0 then begin
-            !outtext("Server failed");
-            !outimage;
-          !end;
+                                                                                !if size <= 0 then begin
+                                                                                  !outtext("Server failed");
+                                                                                  !outimage;
+                                                                                !end;
 
-          if size1 ne 0 then begin
+          if size ne 0 then begin
             bin_.take(1);
           end;
 
@@ -75,6 +80,7 @@ begin
       integer k;
       integer size2;
       integer size3;
+      integer size8;
       integer test;
 
       for i:= 1 step 1 until numberofruns do
@@ -88,18 +94,31 @@ begin
               bin_.take(1);
             end;
 
-          !test := bin_.avail;
-          !outint(test, 0);
-          !outimage;
+                                                                                  !test := bin_.avail;
+                                                                                  !outint(test, 0);
+                                                                                  !outimage;
 
           hold(Trc);
 
+          ! ISSUE, BIN IS NOT EMPTY AND NEEDS TO BE EMPTIED;
           size3 := bin_.avail;
 
-          ! if size3 > 0 then begin
-            ! outtext("ISSUES");
-            ! outimage;
-          ! end;
+           if size3 > 0 then
+           	begin
+           ! ISSUE, BIN IS NOT EMPTY AND NEEDS TO BE EMPTIED;
+            	size8 := bin_.avail;
+           	for j:= 1 step 1 until size8 do
+	             begin
+	             bin_.take(1);
+            	end;
+           end;
+
+          size3 := bin_.avail;
+
+                                                                                  ! if size3 > 0 then begin
+                                                                                    ! outtext("ISSUES");
+                                                                                    ! outimage;
+                                                                                  ! end;
           for k:= 1 step 1 until numberofservers do
             begin
               bin_.give(1);
@@ -113,25 +132,26 @@ begin
     begin
       integer i;
       integer size;
+      long real timestamp;
+      long real timestamp2;
+      long real failtime;
 
       for i:= 1 step 1 until numberofruns do
         begin
-          hold(1.1);
-          outint(generatorIntensity_.sample, 0);
-          outimage;
-
+          hold(1);
           bin_.take(1);
 
           size := bin_.avail;
 
-          ! outint(size, 0);
-          ! outtext(" | ");
-          ! outint(numberofservers, 0);
-          ! outimage;
+          !timestamp := time;
+          failing_.waituntil(bin_.avail < 1);
+          !timestamp2 := time;
 
-          if size <= 0 then begin
-            numberOfFails_.update(1);
-          end;
+          outint(size, 0);
+          outimage;
+
+          failtime := timestamp2 - timestamp;
+          totalFailTime := totalFailTime + failtime;
 
           bin_.give(1);
         end;
@@ -157,6 +177,10 @@ begin
 
     !! Initiate Fail Counter !! ;
     numberOfFails_ :- new Count("Num. Fails");
+
+    !! Initiate ConditionQs !! ;
+    active_ :- new CondQ("Active");
+    failing_ :- new CondQ("Failing");
 
     !! Start Entities !! ;
     !new Generator("Generator").schedule(0);
