@@ -15,19 +15,21 @@ begin
     !! Task Specific Variables !! ;
     integer Tc  = 0.1;
     integer Trc = 2;
-    integer lambdaFC = 0.01;
+    integer lambdaFC = 0.5;
 
     integer Ts  = 2;
     integer Trs = 1;
-    integer lambdaFS = 0.01;
+    integer lambdaFS = 0.5;
 
     integer numberofpackets = 100000;
-    long real lambda = ((1000 / 1) / 1000);
+    long real lambda = ((1000 / 1) / 10000);
 
     integer numberofservers;
 
     !! DEMOS Variables !! ;
-    ref (RDist) generatorIntensity_, controllerFailureIntensity_, serverFailureIntensity_;
+    ref (RDist) generatorIntensity_;
+    ref (RDist) controllerFailureIntensity_;
+    ref (RDist) serverFailureIntensity_;
     ref (Bin) bin_;
     ref (Count) numberOfFails_;
 
@@ -111,17 +113,17 @@ begin
     generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Controller/Server Failure Intensity !! ;
-    controllerFailureIntensity_ :- new NegExp("Cont. Failure", lambdaFC);
-    serverFailureIntensity_ :- new NegExp("Serv. Failure", lambdaFS);
-
-    !! Initiate bin !! ;
-    bin_.take(numberofservers);
-
-    !! Initiate Fail Counter !! ;
-    numberOfFails_ :- new Count("N fails");
+    controllerFailureIntensity_ :- new NegExp("CFail", lambdaFC);
+    serverFailureIntensity_ :- new NegExp("SFail", lambdaFS);
 
     !! Initiate number of servers !!;
     numberofservers := 3;
+
+    !! Initiate bin !! ;
+    bin_ :- new Bin("Bin", numberofservers);
+
+    !! Initiate Fail Counter !! ;
+    numberOfFails_ :- new Count("N fails");
 
     !! Start Entities !! ;
     new Generator("Generator").schedule(0);
