@@ -15,19 +15,17 @@ begin
     !! Task Specific Variables !! ;
     integer Tc  = 0.1;
     integer Trc = 2;
-    integer lambdaFC = 0.5;
+    integer lambdaFC = 0.01;
 
     integer Ts  = 2;
     integer Trs = 1;
-    integer lambdaFS = 0.5;
+    integer lambdaFS = 0.01;
 
-    integer numberofpackets = 100000;
-    long real lambda = ((1000 / 1) / 10000);
+    integer numberofruns = 10000;
 
     integer numberofservers;
 
     !! DEMOS Variables !! ;
-    ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
     ref (Bin) bin_;
@@ -41,19 +39,29 @@ begin
     !! Entity: ServerFailure !! ;
     Entity class ServerFailure;
     begin
+      integer i;
       integer size1;
-      hold(serverFailureIntensity_.sample);
 
-      size1 := bin_.avail;
+      for i:= 1 step 1 until numberofruns do
+        begin
+          hold(serverFailureIntensity_.sample);
 
-      if size1 ne 0 then begin
-        bin_.give(1);
-      end;
+          size1 := bin_.avail;
 
-      numberofservers := numberofservers - 1;
-      hold(Trs);
-      bin_.take(1);
-      numberofservers := numberofservers + 1;
+          !if size1 <= 0 then begin
+            !outtext("Server failed");
+            !outimage;
+          !end;
+
+          if size1 ne 0 then begin
+            bin_.take(1);
+          end;
+
+          numberofservers := numberofservers - 1;
+          hold(Trs);
+          bin_.give(1);
+          numberofservers := numberofservers + 1;
+        end;
     end;
 
 
@@ -61,18 +69,32 @@ begin
     Entity class ControllerFailure;
     begin
       integer i;
+      integer j;
+      integer k;
       integer size2;
-      hold(controllerFailureIntensity_.sample);
+      integer test;
 
-      size2 := bin_.avail;
-      if size2 ne 0 then begin
-        bin_.give(1);
-      end;
-      hold(Trc);
-
-      for i:= 1 step 1 until numberofservers do
+      for i:= 1 step 1 until numberofruns do
         begin
-          bin_.take(1);
+          hold(controllerFailureIntensity_.sample);
+
+          size2 := bin_.avail;
+
+          for j:= 1 step 1 until size2 do
+            begin
+              bin_.take(1);
+            end;
+
+          !test := bin_.avail;
+          !outint(test, 0);
+          !outimage;
+
+          hold(Trc);
+
+          for k:= 1 step 1 until numberofservers do
+            begin
+              bin_.give(1);
+            end;
         end;
     end;
 
@@ -80,37 +102,32 @@ begin
     !! Entity: ELHUB !! ;
     Entity class ELHUB;
     begin
-      integer size = 3;
-      bin_.give(1);
-
-      !size := bin_.avail;
-
-      if size ne 0 then begin
-        numberOfFails_.update(1);
-      end;
-      bin_.take(1);
-    end;
-
-
-    !! Entity: Generator !! ;
-    Entity class Generator;
-    begin
       integer i;
-      for i:= 1 step 1 until numberofpackets do
+      integer size;
+
+      for i:= 1 step 1 until numberofruns do
         begin
-          new ELHUB(edit("packet",i)).schedule(now);
-          hold(generatorIntensity_.sample);
+          hold(0.00001);
+
+          bin_.take(1);
+
+          size := bin_.avail;
+
+          outint(size, 0);
+          outimage;
+
+          if size <= 0 then begin
+            numberOfFails_.update(1);
+          end;
+
+          bin_.give(1);
         end;
     end;
-
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
-
-    !! Packet Generator Intensity !! ;
-    generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Controller/Server Failure Intensity !! ;
     controllerFailureIntensity_ :- new NegExp("CFail", lambdaFC);
@@ -123,10 +140,11 @@ begin
     bin_ :- new Bin("Bin", numberofservers);
 
     !! Initiate Fail Counter !! ;
-    numberOfFails_ :- new Count("N fails");
+    numberOfFails_ :- new Count("Num. Fails");
 
     !! Start Entities !! ;
-    new Generator("Generator").schedule(0);
+    !new Generator("Generator").schedule(0);
+    new ELHUB("ELHUB").schedule(0);
     new ControllerFailure("CF1").schedule(0);
     new ServerFailure("SF1").schedule(0);
     new ServerFailure("SF2").schedule(0);
