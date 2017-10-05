@@ -21,148 +21,99 @@ begin
     integer Trs = 1;
     integer lambdaFS = 0.01;
 
-    integer numberofruns = 100000;
-    long real lambda = ((1000 / 1) / 1000);
-
     integer numberofservers;
 
     long real totalFailTime;
+    long real totalTime;
+    long real percentage_fail;
+
+    boolean controller;
 
 
     !! DEMOS Variables !! ;
-    ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
-    ref (Bin) bin_;
-    ref (Count) numberOfFails_;
-    ref (CondQ) active_;
-    ref (CondQ) failing_;
+    ref (Res) total_servers;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! ENTITY CLASSES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Entity: ServerFailure !! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ServerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ServerFailure;
     begin
-      integer i;
-      integer size;
+	integer size12;
+	boolean test4;
+	long real timerd;
+	long real timere;
+	long real timerf;
+	LOOP:
 
-      for i:= 1 step 1 until numberofruns do
-        begin
-          hold(serverFailureIntensity_.sample);
+	      test4 := false; !!Setst the boolean to false, wich means that the timer for downtime has not started;
 
-          size := bin_.avail;
-
-                                                                                !if size <= 0 then begin
-                                                                                  !outtext("Server failed");
-                                                                                  !outimage;
-                                                                                !end;
-
-          if size ne 0 then begin
-            bin_.take(1);
-          end;
-
-          numberofservers := numberofservers - 1;
-          hold(Trs);
-          bin_.give(1);
-          numberofservers := numberofservers + 1;
-        end;
+	      hold(serverFailureIntensity_.sample);
+	      
+	      size12 := total_servers.avail;
+	     
+	      total_servers.acquire(1);
+	      
+	      if size12 <=0 and controller then begin !!Checks if there is active tokens in res, and that the controller is working;
+	      	timerd := time;
+	      	test4 := true;  !!Indicate that the timer has started;
+	      end;
+	      
+	      numberofservers := numberofservers - 1;
+	      
+	      hold(Trs);
+	      
+	      
+	      if controller then begin !!If controller is working, release token to res;
+	      total_servers.release(1);
+	      numberofservers := numberofservers + 1;
+	      end;
+	      if not controller then begin !!If controller is not working, don't release token, but still update number of servers;
+	      numberofservers := numberofservers + 1;
+	      end;
+              
+              if test4 then timere := time; !If startet timer above, set aquire end-time;
+              timerf := timere - timerd;
+              totalFailTime := totalFailTime + timerf; !!Add the server downtime to the total system downtime;
+	
+        repeat;
+        
     end;
 
 
-    !! Entity: ControllerFailure !! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ControllerFailure;
     begin
-      integer i;
-      integer j;
-      integer k;
       integer size2;
-      integer size3;
-      integer size8;
-      integer test;
+      long real timea;
+      long real timeb;
+      long real timec;
 
-      for i:= 1 step 1 until numberofruns do
-        begin
+      loop:
+          controller := true; !!Controller is working;
           hold(controllerFailureIntensity_.sample);
+	  controller := false; !!Controller is not working;
 
-          size2 := bin_.avail;
-
-          for j:= 1 step 1 until size2 do
-            begin
-              bin_.take(1);
-            end;
-
-                                                                                  !test := bin_.avail;
-                                                                                  !outint(test, 0);
-                                                                                  !outimage;
+          size2 := total_servers.avail;
+	  
+	  timea := time; !!Start timer for controller-down;
+          
+          total_servers.acquire(size2); !!Take out all from res;
 
           hold(Trc);
 
-          ! ISSUE, BIN IS NOT EMPTY AND NEEDS TO BE EMPTIED;
-          size3 := bin_.avail;
+          total_servers.release(numberofservers); !! Add back to res the numbers of active servers;
 
-           if size3 > 0 then
-           	begin
-            	size8 := bin_.avail;
-           	for j:= 1 step 1 until size8 do
-	             begin
-	             bin_.take(1);
-            	end;
-           end;
-
-          size3 := bin_.avail;
-
-                                                                                  ! if size3 > 0 then begin
-                                                                                    ! outtext("ISSUES");
-                                                                                    ! outimage;
-                                                                                  ! end;
-          for k:= 1 step 1 until numberofservers do
-            begin
-              bin_.give(1);
-            end;
-        end;
-    end;
-
-
-    !! Entity: ELHUB !! ;
-    Entity class ELHUB;
-    begin
-      integer i;
-      integer size;
-      long real timestamp;
-      long real timestamp2;
-      long real failtime;
-
-      for i:= 1 step 1 until numberofruns do
-        begin
-          hold(1);
-          bin_.take(1);
-
-          size := bin_.avail +1; !Adding 1, since 1 "ticket" allready taken from BIN;
-
-          timestamp := time;
-          outint(size, 0);
-          outtext (" | ");
-          outint (timestamp, 0);
-          outimage;
-          failing_.waituntil(bin_.avail > 0 );
-          timestamp2 := time;
-
-
-
-          failtime := timestamp2 - timestamp;
-          totalFailTime := totalFailTime + failtime;
-
-	  outtext ("totalFailTime: ");
-          outint (totalFailTime, 0);
-          outimage;
-          
-          
-
-          bin_.give(1);
-        end;
+	  timeb := time; !!Stop time when controller is working;
+	  timec := timeb - timea; !!The time the controller was down;
+	  totalFailTime := totalFailTime + timec; !!Add the controller downtime to the total system downtime;
+       
+      repeat;
+        
     end;
 
 
@@ -170,36 +121,36 @@ begin
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Packet Generator Intensity !! ;
-    generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Controller/Server Failure Intensity !! ;
-    controllerFailureIntensity_ :- new NegExp("CFail", lambdaFC);
-    serverFailureIntensity_ :- new NegExp("SFail", lambdaFS);
+    controllerFailureIntensity_ :- new NegExp("CFail", 0.01);
+    serverFailureIntensity_ :- new NegExp("SFail", 0.01);
     
 
     !! Initiate number of servers !!;
     numberofservers := 3;
 
-    !! Initiate bin !! ;
-    bin_ :- new Bin("Bin", numberofservers);
-
-    !! Initiate Fail Counter !! ;
-    numberOfFails_ :- new Count("Num. Fails");
-
-    !! Initiate ConditionQs !! ;
-    active_ :- new CondQ("Active");
-    failing_ :- new CondQ("Failing");
+      
+    total_servers :- new Res("Total servers", 3);
 
     !! Start Entities !! ;
-    !new Generator("Generator").schedule(0);
-    new ELHUB("ELHUB").schedule(0);
     new ControllerFailure("CF1").schedule(0);
     new ServerFailure("SF1").schedule(0);
     new ServerFailure("SF2").schedule(0);
     new ServerFailure("SF3").schedule(0);
 
     !! Force Hold Simulation Active !! ;
-    hold(300000000);
+    hold(5000000);
+    totalTime := time;
+    percentage_fail := (totalFailTime / totalTime);
+    outtext ("Total runtime: ");
+    outint (totalTime, 0);
+    outimage;
+    outtext ("Total time down: ");
+    outint (totalFailTime, 0);
+    outimage;
+    outtext ("Percentage down: ");
+    outint (percentage_fail, 0);
+    outimage;
   end;
 end;
