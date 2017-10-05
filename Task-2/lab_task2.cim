@@ -30,13 +30,30 @@ begin
 
 
     !! DEMOS Variables !! ;
-    ref (RDist) generatorIntensity_;
+    ref (RDist) generatorIntensity_, controllerFailureIntensity_, serverFailureIntensity_;
     ref (Bin) bin_;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
     !!!! ENTITY CLASSES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!! ;
+
+    !! Entity: ServerFailure !! ;
+    Entity class ServerFailure;
+    begin
+      hold(serverFailureIntensity_.sample);
+    end;
+
+
+    !! Entity: ControllerFailure !! ;
+    Entity class ControllerFailure;
+    begin
+      hold(controllerFailureIntensity_.sample);
+      bin_.vail(0)                                ! BIN VAIL ?
+      hold(Trc);
+      ???????????????????
+    end;
+
 
     !! Entity: ELHUB !! ;
     Entity class ELHUB;
@@ -47,10 +64,6 @@ begin
       end;
       bin_.take(1);                               ! BIN TAKE ? ;
     end;
-
-
-    !! Entity: Y !! ;
-
 
 
     !! Entity: Generator !! ;
@@ -71,7 +84,11 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Packet Generator Intensity !! ;
-    generatorIntensity_ :- new NegExp("packet", lambda);
+    generatorIntensity_ :- new NegExp("Packet", lambda);
+
+    !! Controller/Server Failure Intensity !! ;
+    controllerFailureIntensity_ :- new NegExp("Cont. Failure", lambdaFC);
+    serverFailureIntensity_ :- new NegExp("Serv. Failure", lambdaFS);
 
     !! Initiate bin !! ;
     bin_.take(numberofservers);
