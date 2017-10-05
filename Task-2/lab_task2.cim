@@ -24,14 +24,12 @@ begin
     integer numberofpackets = 100000;
     long real lambda = ((1000 / 1) / 1000);
 
-    integer numberofservers = 3;
-
-    integer numberOfFails = 0;
-
+    integer numberofservers;
 
     !! DEMOS Variables !! ;
     ref (RDist) generatorIntensity_, controllerFailureIntensity_, serverFailureIntensity_;
     ref (Bin) bin_;
+    ref (Count) numberOfFails_;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
@@ -50,10 +48,10 @@ begin
         bin_.give(1);
       end;
 
-      numberofservers = numberofservers - 1;
+      numberofservers := numberofservers - 1;
       hold(Trs);
       bin_.take(1);
-      numberofservers = numberofservers + 1;
+      numberofservers := numberofservers + 1;
     end;
 
 
@@ -86,7 +84,7 @@ begin
       !size := bin_.avail;
 
       if size ne 0 then begin
-        numberOfFails = numberOfFails + 1;
+        numberOfFails_.update(1);
       end;
       bin_.take(1);
     end;
@@ -118,6 +116,12 @@ begin
 
     !! Initiate bin !! ;
     bin_.take(numberofservers);
+
+    !! Initiate Fail Counter !! ;
+    numberOfFails_ :- new Count("N fails");
+
+    !! Initiate number of servers !!;
+    numberofservers := 3;
 
     !! Start Entities !! ;
     new Generator("Generator").schedule(0);
