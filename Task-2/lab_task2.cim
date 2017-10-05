@@ -24,9 +24,14 @@ begin
     integer numberofpackets = 100000;
     long real lambda = ((1000 / 1) / 1000);
 
+    integer numberofservers = 3;
+
+    integer numberOfFails = 0;
+
 
     !! DEMOS Variables !! ;
     ref (RDist) generatorIntensity_;
+    ref (Bin) bin_;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
@@ -36,7 +41,11 @@ begin
     !! Entity: ELHUB !! ;
     Entity class ELHUB;
     begin
-      integer passiveCounter = 0;
+      bin_.give(1);                               ! BIN GIVE ? ;
+      if && BIN_SIZE && != 0 then begin
+        numberOfFails = numberOfFails + 1;
+      end;
+      bin_.take(1);                               ! BIN TAKE ? ;
     end;
 
 
@@ -63,6 +72,9 @@ begin
 
     !! Packet Generator Intensity !! ;
     generatorIntensity_ :- new NegExp("packet", lambda);
+
+    !! Initiate bin !! ;
+    bin_.take(numberofservers);
 
     !! Force Hold Simulation Active !! ;
     hold(300000000);
