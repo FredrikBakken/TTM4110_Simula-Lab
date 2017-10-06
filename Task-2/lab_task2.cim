@@ -8,36 +8,22 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Task Specific Variables !! ;
-    integer Tc  = 0.1;
-    integer Trc = 2;
-    integer lambdaFC = 0.01;
-
-    integer Ts  = 2;
-    integer Trs = 1;
-    integer lambdaFS = 0.01;
-
-    integer numberofruns = 100;
-    long real lambda = ((1000 / 1) / 1000);
 
     integer numberofservers;
 
     long real totalFailTime;
-    long real time20;
+    long real time_now;
 
     boolean controller;
 
 
     !! DEMOS Variables !! ;
-    ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
     ref (RDist) serverRepairIntensity_;
     ref (RDist) controllerRepairIntensity_;
-    ref (Bin) bin_;
-    ref (Count) numberOfSrvFails_, processed_;
-    ref (CondQ) active_;
     ref (CondQ) failing_;
-    ref (Res) fredrik_servers;
+    ref (Res) n_servers;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
@@ -50,23 +36,18 @@ begin
       integer size;
 
 	LOOP:
-	  
-	  !size := bin_.avail;
-          size := fredrik_servers.avail;
+          size := n_servers.avail;
           if size ne 0 then begin
-	      !bin_.take(1);
-	      
+ 
 	      hold(serverFailureIntensity_.sample);
-	      fredrik_servers.acquire(1);
+	      n_servers.acquire(1);
 	      failing_.signal;
 	      numberofservers := numberofservers - 1;
 	      
-	      hold(serverRepairIntensity_.sample);
-	      
-	      !bin_.give(1);
+	      hold(serverRepairIntensity_.sample);	      
 	      
 	      if controller then begin
-	      fredrik_servers.release(1);
+	      n_servers.release(1);
 	      failing_.signal;
 	      end;
 
@@ -77,7 +58,7 @@ begin
 	if size <= 0 then begin
 	      hold(serverFailureIntensity_.sample);
 	      numberofservers := numberofservers - 1;
-	      hold(Trs);
+	      hold(serverRepairIntensity_.sample);
 	      numberofservers := numberofservers + 1;
         end;
         
@@ -101,32 +82,16 @@ begin
           controller := true;
           hold(controllerFailureIntensity_.sample);
 	  controller := false;
-	  !outtext ("Controller fail!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");
-         ! outimage;
-          !size2 := bin_.avail;
-          size2 := fredrik_servers.avail;
+
+          size2 := n_servers.avail;
 	  
-	  
-          
-          !for j:= 1 step 1 until size2 do
-          !  begin
-              !bin_.take(1);
-              fredrik_servers.acquire(size2);
-              failing_.signal;
-          !  end;
-
-
-
+          n_servers.acquire(size2);
+          failing_.signal;
 
           hold(controllerRepairIntensity_.sample);
 
-                                                                               
-          !for k:= 1 step 1 until (numberofservers - 1)do
-          !  begin;
-              fredrik_servers.release(numberofservers);
-              failing_.signal;
-           ! end;
-
+          n_servers.release(numberofservers);
+          failing_.signal;
 
         repeat;
         
@@ -142,15 +107,14 @@ begin
       long real failtime;
     
     loop:
-	!processed_.update(1);
 	  
-	failing_.waituntil(fredrik_servers.avail <= 0 );
+	failing_.waituntil(n_servers.avail <= 0 );
 
-        size := fredrik_servers.avail;
+        size := n_servers.avail;
 
         timestamp := time;
 
- 	failing_.waituntil(fredrik_servers.avail > 0 ); 
+ 	failing_.waituntil(n_servers.avail > 0 ); 
  	
  	timestamp2 := time;
         failtime := timestamp2 - timestamp;
@@ -165,36 +129,22 @@ begin
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !! Packet Generator Intensity !! ;
-    !generatorIntensity_ :- new NegExp("Packet", lambda);
-
-    !! Controller/Server Failure Intensity !! ;
+    !! Generator Intensity !! ;
     controllerFailureIntensity_ :- new NegExp("CFail", 0.01); !! 1/0.01  ;
     serverFailureIntensity_ :- new NegExp("SFail", 0.01); !! 1/0.01 ;
     controllerRepairIntensity_ :- new NegExp("CRep", 2); !!1/2;
     serverRepairIntensity_ :- new NegExp("SRep", 1); !!1/1;
-    
-    
 
     !! Initiate number of servers !!;
     numberofservers := 3;
 
-    !! Initiate bin !! ;
-    bin_ :- new Bin("Bin", 3);
-
-    !! Initiate Fail Counter !! ;
-    numberOfSrvFails_ :- new Count("Num. S. Fails");
-    processed_ :- new Count("Processed");
-
     !! Initiate ConditionQs !! ;
-    !active_ :- new CondQ("Active");
     failing_ :- new CondQ("Failing");
     
-    
-    fredrik_servers :- new Res("Fredrik Server", 3);
+    !! Initiate Res !!;
+    n_servers :- new Res("Res Server", 3);
 
     !! Start Entities !! ;
-    !new Generator("Generator").schedule(0);
     new ELHUB("ELHUB").schedule(0);
     new ControllerFailure("CF1").schedule(0);
     new ServerFailure("SF1").schedule(0);
@@ -203,11 +153,13 @@ begin
 
     !! Force Hold Simulation Active !! ;
     hold(100000);
-    time20 := time;
+    
+    !! Shows final result !!;
+    time_now := time;
     outtext ("totalFailTime: ");
-   outint (totalFailTime, 0);
+    outint (totalFailTime, 0);
     outtext (" | Time: ");
-      outint (time20, 0);
-        outimage;
+    outint (time_now, 0);
+    outimage;
   end;
 end;
