@@ -1,8 +1,3 @@
-! Recommended compiler:         emacs                                                         ;
-! Compile with extended memory: cim -m500 lab_task2.cim                                       ;
-! Run compiled program:         ./lab_task2                                                   ;
-! Run compiled program to file: ./lab_task2 > delay_output.csv  || ./lab_task2 > output.txt   ;
-
 begin
   external class demos="../demos.atr";
   demos
@@ -21,19 +16,28 @@ begin
     integer Trs = 1;
     integer lambdaFS = 0.01;
 
+    integer numberofruns = 100;
+    long real lambda = ((1000 / 1) / 1000);
+
     integer numberofservers;
 
     long real totalFailTime;
-    long real totalTime;
-    long real percentage_fail;
+    long real time20;
 
     boolean controller;
 
 
     !! DEMOS Variables !! ;
+    ref (RDist) generatorIntensity_;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
-    ref (Res) total_servers;
+    ref (RDist) serverRepairIntensity_;
+    ref (RDist) controllerRepairIntensity_;
+    ref (Bin) bin_;
+    ref (Count) numberOfSrvFails_, processed_;
+    ref (CondQ) active_;
+    ref (CondQ) failing_;
+    ref (Res) fredrik_servers;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!! ;
@@ -43,43 +47,41 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ServerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ServerFailure;
     begin
-	integer size12;
-	boolean test4;
-	long real timerd;
-	long real timere;
-	long real timerf;
+      integer size;
+
 	LOOP:
-
-	      test4 := false; !!Setst the boolean to false, wich means that the timer for downtime has not started;
-
+	  
+	  !size := bin_.avail;
+          size := fredrik_servers.avail;
+          if size ne 0 then begin
+	      !bin_.take(1);
+	      
 	      hold(serverFailureIntensity_.sample);
-	      
-	      size12 := total_servers.avail;
-	     
-	      total_servers.acquire(1);
-	      
-	      if size12 <=0 and controller then begin !!Checks if there is active tokens in res, and that the controller is working;
-	      	timerd := time;
-	      	test4 := true;  !!Indicate that the timer has started;
-	      end;
-	      
+	      fredrik_servers.acquire(1);
+	      failing_.signal;
 	      numberofservers := numberofservers - 1;
 	      
-	      hold(Trs);
+	      hold(serverRepairIntensity_.sample);
 	      
+	      !bin_.give(1);
 	      
-	      if controller then begin !!If controller is working, release token to res;
-	      total_servers.release(1);
+	      if controller then begin
+	      fredrik_servers.release(1);
+	      failing_.signal;
 	      numberofservers := numberofservers + 1;
 	      end;
-	      if not controller then begin !!If controller is not working, don't release token, but still update number of servers;
+	      if not controller then begin
 	      numberofservers := numberofservers + 1;
 	      end;
-              
-              if test4 then timere := time; !If startet timer above, set aquire end-time;
-              timerf := timere - timerd;
-              totalFailTime := totalFailTime + timerf; !!Add the server downtime to the total system downtime;
+          end;
 	
+	if size <= 0 then begin
+	      hold(serverFailureIntensity_.sample);
+	      numberofservers := numberofservers - 1;
+	      hold(Trs);
+	      numberofservers := numberofservers + 1;
+        end;
+        
         repeat;
         
     end;
@@ -88,32 +90,115 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ControllerFailure;
     begin
+      integer j;
+      integer k;
       integer size2;
-      long real timea;
-      long real timeb;
-      long real timec;
-
+      integer size3;
+      integer size8;
+  !    integer test;
+      
+	
       loop:
-          controller := true; !!Controller is working;
+          controller := true;
           hold(controllerFailureIntensity_.sample);
-	  controller := false; !!Controller is not working;
-
-          size2 := total_servers.avail;
+	  controller := false;
+	  !outtext ("Controller fail!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ");
+         ! outimage;
+          !size2 := bin_.avail;
+          size2 := fredrik_servers.avail;
 	  
-	  timea := time; !!Start timer for controller-down;
+	  
           
-          total_servers.acquire(size2); !!Take out all from res;
+          for j:= 1 step 1 until size2 do
+            begin
+              !bin_.take(1);
+              fredrik_servers.acquire(1);
+              failing_.signal;
+            end;
 
-          hold(Trc);
 
-          total_servers.release(numberofservers); !! Add back to res the numbers of active servers;
 
-	  timeb := time; !!Stop time when controller is working;
-	  timec := timeb - timea; !!The time the controller was down;
-	  totalFailTime := totalFailTime + timec; !!Add the controller downtime to the total system downtime;
-       
-      repeat;
+
+          hold(controllerRepairIntensity_.sample);
+	
+	  
+	  
+          ! ISSUE, BIN IS NOT EMPTY AND NEEDS TO BE EMPTIED;
+          !size3 := bin_.avail;
+
+           !if size3 > 0 then
+           	begin
+            	size3 := bin_.avail;
+           !	for j:= 1 step 1 until size3 do
+	             begin
+	             bin_.take(1);
+           ! 	end;
+          ! end;
+
+                                                                               
+          for k:= 1 step 1 until (numberofservers - 1)do
+            begin
+              fredrik_servers.release(1);
+              failing_.signal;
+            end;
+
+
+        repeat;
         
+    end;
+
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ELHUB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    Entity class ELHUB;
+    begin
+      integer size;
+      long real timestamp;
+      long real timestamp2;
+      long real failtime;
+    
+    loop:
+	processed_.update(1);
+          !hold(0.1);
+          !bin_.take(1);
+	  failing_.waituntil(fredrik_servers.avail <= 0 ); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;
+
+          !size := bin_.avail;
+          size := fredrik_servers.avail;
+
+          timestamp := time;
+	  
+	  !outtext ("AVAIL: ");
+         ! outint (size, 0);
+         ! outtext (" | Time: ");
+         ! outint (time, 0);
+         ! outimage;
+           
+   !        failing_.waituntil(bin_.avail >= 1 );
+   	!if size <=0 then begin;
+ 	failing_.waituntil(fredrik_servers.avail >= 1 ); !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!;
+ 	timestamp2 := time;
+        failtime := timestamp2 - timestamp;
+        totalFailTime := totalFailTime + failtime;
+
+	!end;
+
+
+
+          !failing_.waituntil( controller );
+          !hold (1.5);
+          
+
+
+
+
+
+
+          
+          
+	
+          !bin_.give(1);
+        
+    repeat;
     end;
 
 
@@ -121,36 +206,49 @@ begin
     !!!! VARIABLE VALUES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
+    !! Packet Generator Intensity !! ;
+    !generatorIntensity_ :- new NegExp("Packet", lambda);
 
     !! Controller/Server Failure Intensity !! ;
-    controllerFailureIntensity_ :- new NegExp("CFail", 0.01);
-    serverFailureIntensity_ :- new NegExp("SFail", 0.01);
+    controllerFailureIntensity_ :- new NegExp("CFail", 0.01); !! 1/0.01  ;
+    serverFailureIntensity_ :- new NegExp("SFail", 0.01); !! 1/0.01 ;
+    controllerRepairIntensity_ :- new NegExp("CRep", 2); !!1/2;
+    serverRepairIntensity_ :- new NegExp("SRep", 1); !!1/1;
+    
     
 
     !! Initiate number of servers !!;
     numberofservers := 3;
 
-      
-    total_servers :- new Res("Total servers", 3);
+    !! Initiate bin !! ;
+    bin_ :- new Bin("Bin", 3);
+
+    !! Initiate Fail Counter !! ;
+    numberOfSrvFails_ :- new Count("Num. S. Fails");
+    processed_ :- new Count("Processed");
+
+    !! Initiate ConditionQs !! ;
+    !active_ :- new CondQ("Active");
+    failing_ :- new CondQ("Failing");
+    
+    
+    fredrik_servers :- new Res("Fredrik Server", 3);
 
     !! Start Entities !! ;
+    !new Generator("Generator").schedule(0);
+    new ELHUB("ELHUB").schedule(0);
     new ControllerFailure("CF1").schedule(0);
     new ServerFailure("SF1").schedule(0);
     new ServerFailure("SF2").schedule(0);
     new ServerFailure("SF3").schedule(0);
 
     !! Force Hold Simulation Active !! ;
-    hold(5000000);
-    totalTime := time;
-    percentage_fail := (totalFailTime / totalTime);
-    outtext ("Total runtime: ");
-    outint (totalTime, 0);
-    outimage;
-    outtext ("Total time down: ");
-    outint (totalFailTime, 0);
-    outimage;
-    outtext ("Percentage down: ");
-    outint (percentage_fail, 0);
-    outimage;
+    hold(100000);
+    time20 := time;
+    outtext ("totalFailTime: ");
+   outint (totalFailTime, 0);
+    outtext (" | Time: ");
+      outint (time20, 0);
+        outimage;
   end;
 end;
