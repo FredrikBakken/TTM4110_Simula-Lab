@@ -35,66 +35,57 @@ begin
     begin
       integer size;
 
-	LOOP:
-          size := n_servers.avail;
-          if size ne 0 then begin
- 
-	      hold(serverFailureIntensity_.sample);
-	      n_servers.acquire(1);
-	      failing_.signal;
-	      numberofservers := numberofservers - 1;
-	      
-	      hold(serverRepairIntensity_.sample);	      
-	      
-	      if controller then begin
-	      n_servers.release(1);
-	      failing_.signal;
-	      end;
+      LOOP:
+        size := n_servers.avail;
 
-	      numberofservers := numberofservers + 1;
+        if size ne 0 then begin
+          hold(serverFailureIntensity_.sample);
+          n_servers.acquire(1);
+          failing_.signal;
+          numberofservers := numberofservers - 1;
 
+          hold(serverRepairIntensity_.sample);
+
+          if controller then begin
+            n_servers.release(1);
+            failing_.signal;
           end;
-	
-	if size <= 0 then begin
-	      hold(serverFailureIntensity_.sample);
-	      numberofservers := numberofservers - 1;
-	      hold(serverRepairIntensity_.sample);
-	      numberofservers := numberofservers + 1;
+
+          numberofservers := numberofservers + 1;
+
         end;
-        
-        repeat;
-        
+
+        if size <= 0 then begin
+  	      hold(serverFailureIntensity_.sample);
+  	      numberofservers := numberofservers - 1;
+
+  	      hold(serverRepairIntensity_.sample);
+  	      numberofservers := numberofservers + 1;
+        end;
+      REPEAT;
     end;
 
 
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ControllerFailure;
     begin
-      integer j;
-      integer k;
-      integer size2;
-      integer size3;
-      integer size8;
-  !    integer test;
-      
-	
-      loop:
-          controller := true;
-          hold(controllerFailureIntensity_.sample);
-	  controller := false;
+      integer size;
 
-          size2 := n_servers.avail;
-	  
-          n_servers.acquire(size2);
-          failing_.signal;
+      LOOP:
+        controller := true;
+        hold(controllerFailureIntensity_.sample);
+        controller := false;
 
-          hold(controllerRepairIntensity_.sample);
+        size := n_servers.avail;
 
-          n_servers.release(numberofservers);
-          failing_.signal;
+        n_servers.acquire(size);
+        failing_.signal;
 
-        repeat;
-        
+        hold(controllerRepairIntensity_.sample);
+
+        n_servers.release(numberofservers);
+        failing_.signal;
+      REPEAT;
     end;
 
 
@@ -105,23 +96,18 @@ begin
       long real timestamp;
       long real timestamp2;
       long real failtime;
-    
-    loop:
-	  
-	failing_.waituntil(n_servers.avail <= 0 );
 
-        size := n_servers.avail;
+      LOOP:
+	     failing_.waituntil(n_servers.avail <= 0 );
+       size := n_servers.avail;
 
-        timestamp := time;
+       timestamp := time;
+ 	     failing_.waituntil(n_servers.avail > 0 );
+ 	     timestamp2 := time;
 
- 	failing_.waituntil(n_servers.avail > 0 ); 
- 	
- 	timestamp2 := time;
-        failtime := timestamp2 - timestamp;
-        totalFailTime := totalFailTime + failtime;
-
-        
-    repeat;
+       failtime := timestamp2 - timestamp;
+       totalFailTime := totalFailTime + failtime;
+      REPEAT;
     end;
 
 
@@ -140,7 +126,7 @@ begin
 
     !! Initiate ConditionQs !! ;
     failing_ :- new CondQ("Failing");
-    
+
     !! Initiate Res !!;
     n_servers :- new Res("Res Server", 3);
 
@@ -153,7 +139,7 @@ begin
 
     !! Force Hold Simulation Active !! ;
     hold(100000);
-    
+
     !! Shows final result !!;
     time_now := time;
     outtext ("totalFailTime: ");
