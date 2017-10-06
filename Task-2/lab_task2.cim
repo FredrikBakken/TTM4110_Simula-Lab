@@ -1,3 +1,7 @@
+! Recommended compiler:         emacs                                                         ;
+! Compile with extended memory: cim -m500 lab_task2.cim                                       ;
+! Run compiled program:         ./lab_task2                                                   ;
+
 begin
   external class demos="../demos.atr";
   demos
@@ -17,7 +21,7 @@ begin
     boolean controller;
 
 
-    !! DEMOS Variables !! ;
+    !! DEMOS Specific Variables !! ;
     ref (RDist) controllerFailureIntensity_;
     ref (RDist) serverFailureIntensity_;
     ref (RDist) serverRepairIntensity_;
@@ -30,7 +34,7 @@ begin
     !!!! ENTITY CLASSES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ServerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ServerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ServerFailure;
     begin
       integer size;
@@ -56,17 +60,17 @@ begin
         end;
 
         if size <= 0 then begin
-  	      hold(serverFailureIntensity_.sample);
-  	      numberofservers := numberofservers - 1;
+          hold(serverFailureIntensity_.sample);
+          numberofservers := numberofservers - 1;
 
-  	      hold(serverRepairIntensity_.sample);
-  	      numberofservers := numberofservers + 1;
+          hold(serverRepairIntensity_.sample);
+          numberofservers := numberofservers + 1;
         end;
       REPEAT;
     end;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ControllerFailure;
     begin
       integer size;
@@ -89,7 +93,7 @@ begin
     end;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ELHUB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ELHUB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
     Entity class ELHUB;
     begin
       integer size;
@@ -98,15 +102,15 @@ begin
       long real failtime;
 
       LOOP:
-	     failing_.waituntil(n_servers.avail <= 0 );
-       size := n_servers.avail;
+        failing_.waituntil(n_servers.avail <= 0 );
+        size := n_servers.avail;
 
-       timestamp := time;
- 	     failing_.waituntil(n_servers.avail > 0 );
- 	     timestamp2 := time;
+        timestamp := time;
+        failing_.waituntil(n_servers.avail > 0 );
+        timestamp2 := time;
 
-       failtime := timestamp2 - timestamp;
-       totalFailTime := totalFailTime + failtime;
+        failtime := timestamp2 - timestamp;
+        totalFailTime := totalFailTime + failtime;
       REPEAT;
     end;
 
@@ -117,17 +121,17 @@ begin
 
     !! Generator Intensity !! ;
     controllerFailureIntensity_ :- new NegExp("CFail", 0.01); !! 1/0.01  ;
-    serverFailureIntensity_ :- new NegExp("SFail", 0.01); !! 1/0.01 ;
-    controllerRepairIntensity_ :- new NegExp("CRep", 2); !!1/2;
-    serverRepairIntensity_ :- new NegExp("SRep", 1); !!1/1;
+    serverFailureIntensity_     :- new NegExp("SFail", 0.01); !! 1/0.01 ;
+    controllerRepairIntensity_  :- new NegExp("CRep", 2);     !! 1/2 ;
+    serverRepairIntensity_      :- new NegExp("SRep", 1);     !! 1/1 ;
 
-    !! Initiate number of servers !!;
+    !! Initiate number of servers !! ;
     numberofservers := 3;
 
-    !! Initiate ConditionQs !! ;
+    !! Initiate ConditionQ !! ;
     failing_ :- new CondQ("Failing");
 
-    !! Initiate Res !!;
+    !! Initiate Res !! ;
     n_servers :- new Res("Res Server", 3);
 
     !! Start Entities !! ;
@@ -140,12 +144,12 @@ begin
     !! Force Hold Simulation Active !! ;
     hold(100000);
 
-    !! Shows final result !!;
+    !! Shows Final Result !! ;
     time_now := time;
-    outtext ("totalFailTime: ");
-    outint (totalFailTime, 0);
-    outtext (" | Time: ");
-    outint (time_now, 0);
+    outtext("totalFailTime: ");
+    outint(totalFailTime, 0);
+    outtext(" | Time: ");
+    outint(time_now, 0);
     outimage;
   end;
 end;
