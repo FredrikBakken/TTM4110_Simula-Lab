@@ -34,7 +34,7 @@ begin
     !!!! ENTITY CLASSES !!!! ;
     !!!!!!!!!!!!!!!!!!!!!!!! ;
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ServerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !! Entity: ServerFailure !! ;
     Entity class ServerFailure;
     begin
       integer size;
@@ -70,7 +70,7 @@ begin
     end;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ControllerFailure !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !! Entity: ControllerFailure !! ;
     Entity class ControllerFailure;
     begin
       integer size;
@@ -93,7 +93,7 @@ begin
     end;
 
 
-    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Entity: ELHUB !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! ;
+    !! Entity: ELHUB !! ;
     Entity class ELHUB;
     begin
       integer size;
@@ -120,7 +120,7 @@ begin
     !!!!!!!!!!!!!!!!!!!!!!!!! ;
 
     !! Generator Intensity !! ;
-    controllerFailureIntensity_ :- new NegExp("CFail", 0.01); !! 1/0.01  ;
+    controllerFailureIntensity_ :- new NegExp("CFail", 0.01); !! 1/0.01 ;
     serverFailureIntensity_     :- new NegExp("SFail", 0.01); !! 1/0.01 ;
     controllerRepairIntensity_  :- new NegExp("CRep", 2);     !! 1/2 ;
     serverRepairIntensity_      :- new NegExp("SRep", 1);     !! 1/1 ;
