@@ -1,8 +1,8 @@
 # TTM4110: Simulation Lab 2017
 
 ### Group Members
- - [Fredrik Bakken](https://fredrikbakken.no)
  - [Fredrik Andreassen](https://github.com/fredrian)
+ - [Fredrik Bakken](https://fredrikbakken.no)
 
 ### Project Description (from BlackBoard)
 
